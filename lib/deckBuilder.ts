@@ -184,11 +184,10 @@ export async function buildDeck(req: DeckRequest): Promise<Buffer> {
   pptx.company = "Kishoa Asset Management";
   pptx.subject = "Presentación generada por KAM Deck Generator";
   pptx.title = content.title;
-  pptx.lang = "es-MX";
+  (pptx as any).lang = "es-MX";
   pptx.theme = {
     headFontFace: "Montserrat",
     bodyFontFace: "Montserrat",
-    lang: "es-MX"
   };
 
   // Cover
