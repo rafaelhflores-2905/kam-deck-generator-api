@@ -1,0 +1,10 @@
+{
+  "functions": {
+    "app/api/generate-deck/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/generate-content/route.ts": {
+      "maxDuration": 45
+    }
+  }
+}
