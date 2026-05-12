@@ -16,12 +16,14 @@ function fallbackContent(req: Partial<DeckRequest>): DeckContent {
     subtitle: "Solución financiera para proyectos solares y almacenamiento",
     presentationType: req.presentationType || "BESS",
     audience: "EPC, integrador u offtaker",
-    closingLine: "KAM convierte oportunidades energéticas en proyectos cerrados, financiados y en operación.",
+    closingLine:
+      "KAM convierte oportunidades energéticas en proyectos cerrados, financiados y en operación.",
     slides: [
       {
         eyebrow: "Contexto ejecutivo",
         title: "La energía ya no es solo un costo operativo",
-        headline: "Una estructura financiera clara convierte la transición energética en una decisión viable.",
+        headline:
+          "Una estructura financiera clara convierte la transición energética en una decisión viable.",
         bullets: [
           "Preserva liquidez y evita frenar proyectos por CAPEX.",
           "Ordena el caso de negocio para dirección, finanzas y jurídico.",
@@ -32,7 +34,8 @@ function fallbackContent(req: Partial<DeckRequest>): DeckContent {
       {
         eyebrow: "Propuesta de valor",
         title: `Qué resuelve ${req.presentationType || "KAM"}`,
-        headline: "KAM entra como socio financiero especializado para convertir el proyecto en realidad.",
+        headline:
+          "KAM entra como socio financiero especializado para convertir el proyecto en realidad.",
         bullets: [
           "Financiamiento estructurado para solar FV y BESS.",
           "Acompañamiento técnico-financiero durante todo el proceso.",
@@ -41,14 +44,40 @@ function fallbackContent(req: Partial<DeckRequest>): DeckContent {
         ]
       },
       {
-        eyebrow: "Ruta de decisión",
-        title: "Cómo avanzamos",
+        eyebrow: "Beneficios comerciales",
+        title: "Por qué avanzar con KAM",
+        headline:
+          "La estructura permite presentar el proyecto como una decisión financiera viable y no solo técnica.",
         bullets: [
-          "Evaluación técnica y de consumo.",
-          "Definición de esquema financiero.",
-          "Integración documental.",
-          "Firma contractual.",
-          "Ejecución, puesta en marcha y seguimiento."
+          "Cero inversión inicial en esquemas aplicables.",
+          "Cuotas, pagos o precio de energía definidos según producto.",
+          "O&M, monitoreo y seguro integrados cuando aplique.",
+          "Ruta clara de documentación, firma y ejecución."
+        ]
+      },
+      {
+        eyebrow: "Modelo de trabajo",
+        title: "Cómo se estructura el proyecto",
+        headline:
+          "El EPC conserva la relación comercial y KAM entra como socio financiero especializado.",
+        bullets: [
+          "Evaluación técnica y financiera del proyecto.",
+          "Validación documental del cliente y del inmueble.",
+          "Definición de producto: PPA, PTO, Leasing, FV+BESS o BESS.",
+          "Formalización contractual y acompañamiento hasta operación."
+        ]
+      },
+      {
+        eyebrow: "Siguientes pasos",
+        title: "Ruta para avanzar",
+        headline:
+          "El objetivo es convertir la oportunidad en una propuesta clara, financiable y ejecutable.",
+        bullets: [
+          "Completar información del proyecto.",
+          "Validar consumo, sitio y alcance técnico.",
+          "Definir estructura económica.",
+          "Integrar documentación.",
+          "Agendar revisión con el cliente y EPC."
         ]
       }
     ]
@@ -59,19 +88,46 @@ export async function POST(req: NextRequest) {
   if (!assertToken(req)) return unauthorized(req);
 
   const headers = corsHeaders(req);
+  let body: Partial<DeckRequest> = {};
+
   try {
-    const body = (await req.json()) as Partial<DeckRequest>;
+    body = (await req.json()) as Partial<DeckRequest>;
+  } catch (error: any) {
+    return NextResponse.json(
+      {
+        error: "Payload inválido",
+        details: error?.message || String(error)
+      },
+      { status: 400, headers }
+    );
+  }
 
-    if (!process.env.OPENAI_API_KEY) {
-      return NextResponse.json({ content: fallbackContent(body), warning: "OPENAI_API_KEY no configurada; se usó contenido base." }, { headers });
-    }
+  if (!process.env.OPENAI_API_KEY) {
+    return NextResponse.json(
+      {
+        content: fallbackContent(body),
+        warning: "OPENAI_API_KEY no configurada; se usó contenido base."
+      },
+      { headers }
+    );
+  }
 
-    const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  try {
+    const client = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY
+    });
 
     const schema = {
       type: "object",
       additionalProperties: false,
-      required: ["title", "subtitle", "presentationType", "audience", "slides", "closingLine"],
+      required: [
+        "title",
+        "subtitle",
+        "presentationType",
+        "audience",
+        "slides",
+        "closingLine"
+      ],
       properties: {
         title: { type: "string" },
         subtitle: { type: "string" },
@@ -128,11 +184,24 @@ Estructura el contenido para slides de PowerPoint.`,
     } as any);
 
     const parsed = JSON.parse(response.output_text || "{}") as DeckContent;
-    return NextResponse.json({ content: parsed }, { headers });
-  } catch (error: any) {
+
     return NextResponse.json(
-      { error: "No se pudo generar el contenido", details: error?.message || String(error) },
-      { status: 500, headers }
+      {
+        content: parsed
+      },
+      { headers }
+    );
+  } catch (error: any) {
+    console.error("KAM generate-content error:", error);
+
+    return NextResponse.json(
+      {
+        content: fallbackContent(body),
+        warning:
+          "No se pudo generar contenido con IA; se usó contenido base para continuar.",
+        details: error?.message || String(error)
+      },
+      { headers }
     );
   }
 }
