@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
     const body = (await req.json()) as DeckRequest;
     const pptBuffer = await buildDeck(body);
 
-    return new NextResponse(pptBuffer, {
+    return new NextResponse(new Uint8Array(pptBuffer), {
       status: 200,
       headers: {
         ...headers,
